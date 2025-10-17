@@ -2,18 +2,16 @@
 #include "../execution.h"
 #include "../../includes/minishell.h"
 
-/* Affiche les arguments de la commande echo avec expansion des variables */
+/* Affiche les arguments de la commande echo */
 static void	print_args(t_command *cmd, t_shell *shell, int start_idx)
 {
 	int		i;
-	char	*expanded;
 
+	(void)shell;
 	i = start_idx;
 	while (cmd->args[i])
 	{
-		expanded = expand_variables_with_shell(cmd->args[i], shell->env, shell);
-		ft_putstr_fd(expanded, STDOUT_FILENO);
-		free(expanded);
+		ft_putstr_fd(cmd->args[i], STDOUT_FILENO);
 		if (cmd->args[i + 1])
 			ft_putstr_fd(" ", STDOUT_FILENO);
 		i++;

@@ -25,7 +25,7 @@ t_ast_node	*parse_simple_command(t_token *tokens, t_token *stop)
 
 /* Remplit un noeud AST avec les informations de redirection */
 int	fill_redirections_node(t_ast_node *ast_node, t_token *tokens
-	, t_token *redir_token)
+	, t_token *redir_token, t_token *stop)
 {
 	if (!ast_node || !redir_token)
 		return (0);
@@ -43,7 +43,18 @@ int	fill_redirections_node(t_ast_node *ast_node, t_token *tokens
 		free_ast(ast_node);
 		return (0);
 	}
-	ast_node->left = parse_simple_command(tokens, redir_token);
+	/* Vérifier s'il y a d'autres redirections avant redir_token */
+	if (has_redirections(tokens, redir_token))
+	{
+		/* Il y a d'autres redirections, parser récursivement */
+		ast_node->left = parse_command(tokens, redir_token);
+	}
+	else
+	{
+		/* Plus de redirections, créer la commande avec tous les arguments jusqu'à stop */
+		/* count_token_words et create_args ignoreront les redirections */
+		ast_node->left = parse_simple_command(tokens, stop);
+	}
 	if (!ast_node->left)
 	{
 		free_ast(ast_node);
@@ -65,7 +76,7 @@ t_ast_node	*parse_command_with_redirections(t_token *tokens, t_token *stop)
 		return (NULL);
 	ft_memset(ast_node, 0, sizeof(t_ast_node));
 	redir_token = find_redirections_token(tokens, stop);
-	if (!fill_redirections_node(ast_node, tokens, redir_token))
+	if (!fill_redirections_node(ast_node, tokens, redir_token, stop))
 		return (NULL);
 	return (ast_node);
 }

@@ -3,7 +3,7 @@
 #include "../execution/execution.h"
 
 /* Détermine le type de token en fonction de sa valeur (>, >>, <, <<, |, &&, etc.) */
-t_token_type	get_token_type(char *word)
+t_token_type get_token_type(char *word)
 {
 	if (!ft_strncmp(word, ">>", 2) && ft_strlen(word) == 2)
 		return (APPEND);
@@ -22,10 +22,10 @@ t_token_type	get_token_type(char *word)
 }
 
 /* Crée un nouveau token et l'ajoute à la liste chaînée de tokens */
-int	create_token(t_token **tokens, char *word)
+int create_token(t_token **tokens, char *word)
 {
-	t_token	*new;
-	t_token	*curr;
+	t_token *new;
+	t_token *curr;
 
 	new = malloc(sizeof(t_token));
 	if (!new)
@@ -51,9 +51,9 @@ int	create_token(t_token **tokens, char *word)
 }
 
 /* Analyse lexicale d'une ligne de commande et crée une liste de tokens */
-t_token	*ft_tokenize(char *line)
+t_token *ft_tokenize(char *line)
 {
-	t_token	*tokens;
+	t_token *tokens;
 
 	if (!line)
 		return (NULL);
@@ -71,7 +71,7 @@ t_token	*ft_tokenize(char *line)
 }
 
 /* Convertit un type de token en chaîne de caractères pour le débogage */
-const char	*token_type_to_str(t_token_type type)
+const char *token_type_to_str(t_token_type type)
 {
 	if (type == WORD)
 		return ("WORD");
@@ -91,13 +91,13 @@ const char	*token_type_to_str(t_token_type type)
 }
 
 /* Effectue l'expansion des variables d'environnement dans la valeur d'un token */
-char	*expand_token_value(char *value, t_env *env)
+char *expand_token_value(char *value, t_env *env)
 {
-	char	*expanded;
+	char *expanded;
 
 	if (!value || !env)
 		return (ft_strdup(value));
-	
+
 	// Vérifier si la valeur contient une variable
 	if (ft_strchr(value, '$'))
 	{
@@ -109,26 +109,3 @@ char	*expand_token_value(char *value, t_env *env)
 	}
 	return (ft_strdup(value));
 }
-
-/* Commented out to avoid conflict with main.c
-int	main(int argc, char *argv[])
-{
-	t_token	*token;
-	t_token	*current;
-
-	if (argc != 2)
-		return (0);
-	token = ft_tokenize(argv[1]);
-	if (!token)
-		return (1);
-	current = token;
-	while (current)
-	{
-		printf("token type: %s\n", token_type_to_str(current->type));
-		printf("token word: %s\n\n", current->value);
-		current = current->next;
-	}
-	free_tokens(&token);
-	return (0);
-}
-*/

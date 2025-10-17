@@ -18,6 +18,6 @@ void	execute_redirection(t_ast_node *ast, t_shell *shell);
 int		is_redirection_node(t_ast_node *node);
 void	setup_std_descriptors(int in_fd, int out_fd);
 void	setup_tmp_descriptors(int tmp_in, int tmp_out);
-void	process_redirection_node(t_ast_node *node, t_shell *shell);
+int		process_redirection_node(t_ast_node *node, t_shell *shell);
 
 #endif

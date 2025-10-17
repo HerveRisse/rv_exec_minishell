@@ -34,7 +34,7 @@ static char	*try_paths(char *cmd, char **paths)
 		i++;
 	}
 	free_array(paths);
-	return (ft_strdup(cmd));
+	return (NULL);
 }
 
 /* Recherche le chemin complet d'une commande en utilisant la variable PATH */
@@ -49,9 +49,9 @@ char	*find_command_path(char *cmd, t_env *env)
 		return (ft_strdup(cmd));
 	path_value = get_path_value(env);
 	if (!path_value)
-		return (ft_strdup(cmd));
+		return (NULL);
 	paths = ft_split(path_value, ':');
 	if (!paths)
-		return (ft_strdup(cmd));
+		return (NULL);
 	return (try_paths(cmd, paths));
 }

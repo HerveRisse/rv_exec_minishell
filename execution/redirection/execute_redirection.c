@@ -7,48 +7,51 @@ static t_ast_node	*find_command_node(t_ast_node *ast, t_shell *shell)
 {
 	t_ast_node	*cmd_node;
 
-	cmd_node = ast->left;
-	while (cmd_node && cmd_node->type != NODE_COMMAND)
+	/* Si c'est un nœud de commande, on l'a trouvé */
+	if (ast->type == NODE_COMMAND)
+		return (ast);
+	
+	/* Si c'est une redirection, d'abord descendre à gauche */
+	if (is_redirection_node(ast))
 	{
-		if (is_redirection_node(cmd_node))
-			process_redirection_node(cmd_node, shell);
-		cmd_node = cmd_node->left;
+		/* Descendre récursivement pour trouver le nœud de commande */
+		cmd_node = find_command_node(ast->left, shell);
+		
+		/* Si on a trouvé le nœud de commande, appliquer la redirection en remontant */
+		if (cmd_node && process_redirection_node(ast, shell) != 0)
+			return (NULL);
+		
+		return (cmd_node);
 	}
-	return (cmd_node);
-}
-
-/* Restaure les descripteurs standard et ferme les descripteurs de fichier ouverts */
-static void	cleanup_descriptors(int stdin_copy, int stdout_copy, int in_fd,
-						int out_fd)
-{
-	dup2(stdin_copy, STDIN_FILENO);
-	dup2(stdout_copy, STDOUT_FILENO);
-	close(stdin_copy);
-	close(stdout_copy);
-	if (in_fd != STDIN_FILENO)
-		close(in_fd);
-	if (out_fd != STDOUT_FILENO)
-		close(out_fd);
+	
+	/* Sinon, continuer à descendre */
+	if (ast->left)
+		return (find_command_node(ast->left, shell));
+	
+	return (NULL);
 }
 
 /* Exécute une commande avec des redirections en configurant les descripteurs appropriés */
 void	execute_redirection(t_ast_node *ast, t_shell *shell)
 {
-	int			in_fd;
-	int			out_fd;
 	int			stdin_copy;
 	int			stdout_copy;
 	t_ast_node	*cmd_node;
 
-	in_fd = STDIN_FILENO;
-	out_fd = STDOUT_FILENO;
-	if (setup_redirection(ast, &in_fd, &out_fd, shell))
-		return ;
+	/* Sauvegarder les descripteurs standard */
 	stdin_copy = dup(STDIN_FILENO);
 	stdout_copy = dup(STDOUT_FILENO);
-	setup_std_descriptors(in_fd, out_fd);
+	
+	/* Traiter toutes les redirections et trouver le nœud de commande */
 	cmd_node = find_command_node(ast, shell);
+	
+	/* Exécuter la commande si aucune erreur de redirection */
 	if (cmd_node)
 		execute_ast(cmd_node, shell);
-	cleanup_descriptors(stdin_copy, stdout_copy, in_fd, out_fd);
+	
+	/* Restaurer les descripteurs standard */
+	dup2(stdin_copy, STDIN_FILENO);
+	dup2(stdout_copy, STDOUT_FILENO);
+	close(stdin_copy);
+	close(stdout_copy);
 }

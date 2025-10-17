@@ -2,13 +2,12 @@
 #include "includes/minishell.h"
 #include <stdio.h>
 
-int	g_signal_status = 0;
+int g_signal_status = 0;
 
-/* Point d'entrée du minishell: initialise l'environnement et gère la boucle principale */
-int	main(int argc, char **argv, char **envp)
+int main(int argc, char **argv, char **envp)
 {
-	char	*line;
-	t_shell	shell;
+	char *line;
+	t_shell shell;
 
 	(void)argc;
 	(void)argv;
@@ -24,7 +23,7 @@ int	main(int argc, char **argv, char **envp)
 		if (!line)
 		{
 			printf("exit\n");
-			break ;
+			break;
 		}
 		if (*line)
 			process_line(line, &shell);

@@ -37,9 +37,9 @@ char	*extract_word_simple_quotes(char **l)
 	if (len == 1)
 	{
 		(*l) += len + 1;
-		return (ft_strdup(""));
+		return (ft_strdup("''"));
 	}
-	word = ft_strndup(line + 1, len - 1);
+	word = ft_strndup(line, len + 1);
 	(*l) += len + 1;
 	return (word);
 }
@@ -61,13 +61,24 @@ char	*extract_word_double_quotes(char **l)
 	if (len == 1)
 	{
 		(*l) += len + 1;
-		return (ft_strdup(""));
+		return (ft_strdup("\"\""));
 	}
 	word = get_word_in_double_quotes(line, len);
 	if (word == NULL)
 		return (NULL);
 	(*l) += len + 1;
-	return (word);
+	/* Ajouter les guillemets doubles autour du mot */
+	{
+		char	*tmp;
+		char	*result;
+		tmp = ft_strjoin("\"", word);
+		free(word);
+		if (!tmp)
+			return (NULL);
+		result = ft_strjoin(tmp, "\"");
+		free(tmp);
+		return (result);
+	}
 }
 
 char	*extract_operator(char **l)

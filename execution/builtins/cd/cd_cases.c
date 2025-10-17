@@ -3,9 +3,9 @@
 #include "cd.h"
 
 /* Gère le cas spécial 'cd -' qui change vers le répertoire précédent (OLDPWD) */
-int	cd_special_dash(t_shell *shell)
+int cd_special_dash(t_shell *shell)
 {
-	t_env	*oldpwd_var;
+	t_env *oldpwd_var;
 
 	oldpwd_var = get_env_var(shell->env, "OLDPWD");
 	if (!oldpwd_var || !oldpwd_var->value || !oldpwd_var->value[0])
@@ -25,12 +25,12 @@ int	cd_special_dash(t_shell *shell)
 }
 
 /* Gère le cas normal de cd avec un chemin spécifié ou implicite */
-int	cd_normal_case(t_command *cmd, t_shell *shell)
+int cd_normal_case(t_command *cmd, t_shell *shell)
 {
-	char	*path;
-	char	*old_pwd;
-	char	cwd[1024];
-	int		result;
+	char *path;
+	char *old_pwd;
+	char cwd[1024];
+	int result;
 
 	result = cd_get_path(cmd, shell, &path);
 	if (result)

@@ -113,6 +113,7 @@ char	*expand_variables_with_shell(char *str, t_env *env, t_shell *shell)
 	char	*result;
 	int		i;
 	int		in_single_quotes;
+	int		in_double_quotes;
 	t_env	*env_to_use;
 
 	if (!str)
@@ -122,12 +123,21 @@ char	*expand_variables_with_shell(char *str, t_env *env, t_shell *shell)
 		return (NULL);
 	i = 0;
 	in_single_quotes = 0;
+	in_double_quotes = 0;
 	env_to_use = shell ? shell->env : env;
 	while (str[i])
 	{
-		if (str[i] == '\'')
+		if (str[i] == '\'' && !in_double_quotes)
+		{
 			in_single_quotes = !in_single_quotes;
-		if (str[i] == '$' && !in_single_quotes)
+			i++;
+		}
+		else if (str[i] == '"' && !in_single_quotes)
+		{
+			in_double_quotes = !in_double_quotes;
+			i++;
+		}
+		else if (str[i] == '$' && !in_single_quotes)
 			result = process_char(result, str, &i, shell, env_to_use);
 		else
 			result = add_char_to_result(result, str[i++]);

@@ -32,36 +32,16 @@ void	expand_tokens_with_shell(t_token *tokens, t_env *env, t_shell *shell)
 	}
 }
 
-/* Vérifie si la ligne est une simple requête pour le code de sortie ($?) */
-static int	is_exit_status_query(char *line)
-{
-	while (*line && is_space(*line))
-		line++;
-	if (ft_strncmp(line, "$?", 2) == 0)
-	{
-		line += 2;
-		while (*line && is_space(*line))
-			line++;
-		return (*line == '\0');
-	}
-	return (0);
-}
+
 
 /* Traite une ligne de commande: lexing, parsing et exécution */
 void	process_line(char *line, t_shell *shell)
 {
 	t_token		*tokens;
 	t_ast_node	*ast;
-	char		exit_status_str[12];
 
 	if (!line || !*line)
 		return ;
-	if (is_exit_status_query(line))
-	{
-		ft_itoa_buf(shell->exit_status, exit_status_str);
-		ft_putendl_fd(exit_status_str, STDOUT_FILENO);
-		return ;
-	}
 	tokens = ft_tokenize(line);
 	if (!tokens)
 		return ;

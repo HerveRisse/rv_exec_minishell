@@ -1,5 +1,7 @@
 
 #include "execution.h"
+#include <sys/stat.h>
+#include <errno.h>
 
 /* Configure les redirections d'entrée/sortie pour le processus enfant */
 static void	setup_redirections(int in_fd, int out_fd)
@@ -19,11 +21,52 @@ static void	setup_redirections(int in_fd, int out_fd)
 /* Exécute la commande externe avec execve et gère les erreurs */
 static void	execute_cmd(t_command *cmd, char **env_array, char *path)
 {
+	struct stat	path_stat;
+	int			exit_code;
+
 	execve(path, cmd->args, env_array);
-	error_msg("command not found");
+	/* Si execve échoue, on arrive ici */
+	exit_code = 127;
+	if (errno == ENOEXEC)
+	{
+		/* Fichier sans format exécutable valide, essayer de l'exécuter avec /bin/sh */
+		cmd->args[0] = path;
+		execve("/bin/sh", cmd->args, env_array);
+		/* Si /bin/sh échoue aussi */
+		error_msg("command not found");
+		exit_code = 127;
+	}
+	else if (errno == ENOENT)
+	{
+		/* Fichier ou répertoire inexistant */
+		ft_putstr_fd("minishell: ", 2);
+		ft_putstr_fd(path, 2);
+		ft_putstr_fd(": No such file or directory\n", 2);
+		exit_code = 127;
+	}
+	else if (errno == EACCES && ft_strchr(path, '/'))
+	{
+		/* Vérifier si c'est un répertoire (seulement pour les chemins explicites) */
+		if (stat(path, &path_stat) == 0 && S_ISDIR(path_stat.st_mode))
+		{
+			error_msg("Is a directory");
+			exit_code = 126;
+		}
+		else
+		{
+			error_msg("Permission denied");
+			exit_code = 126;
+		}
+	}
+	else
+	{
+		/* Pour tous les autres cas, afficher "command not found" */
+		error_msg("command not found");
+		exit_code = 127;
+	}
 	free(path);
 	free_array(env_array);
-	exit(127);
+	exit(exit_code);
 }
 
 /* Gère le processus enfant: redirections, recherche du chemin et exécution */
@@ -33,6 +76,11 @@ static void	child_process(t_command *cmd, t_shell *shell, int in_fd, int out_fd)
 	char	*path;
 
 	setup_redirections(in_fd, out_fd);
+	/* Gérer le cas d'une commande vide */
+	if (!cmd->args[0] || !cmd->args[0][0])
+	{
+		exit(0);
+	}
 	env_array = env_to_array(shell->env);
 	path = find_command_path(cmd->args[0], shell->env);
 	if (!path)

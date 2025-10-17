@@ -25,17 +25,14 @@ static void	execute_right_command(int *pipe_fd, t_ast_node *right,
 
 /* Configure le pipe et crée les processus enfants pour les commandes gauche et droite */
 static void	setup_pipe(int *pipe_fd, t_ast_node *ast, t_shell *shell,
-		int *saved_stdin)
+		int *saved_stdin, pid_t *pid1, pid_t *pid2)
 {
-	pid_t	pid1;
-	pid_t	pid2;
-
 	*saved_stdin = dup(STDIN_FILENO);
-	pid1 = fork();
-	if (pid1 == 0)
+	*pid1 = fork();
+	if (*pid1 == 0)
 		execute_left_command(pipe_fd, ast->left, shell);
-	pid2 = fork();
-	if (pid2 == 0)
+	*pid2 = fork();
+	if (*pid2 == 0)
 		execute_right_command(pipe_fd, ast->right, shell);
 }
 
@@ -45,19 +42,24 @@ void	execute_pipe(t_ast_node *ast, t_shell *shell)
 	int		pipe_fd[2];
 	int		status;
 	int		saved_stdin;
+	pid_t	pid1;
+	pid_t	pid2;
 
 	if (pipe(pipe_fd) == -1)
 	{
 		error_msg("pipe error");
 		return ;
 	}
-	setup_pipe(pipe_fd, ast, shell, &saved_stdin);
+	setup_pipe(pipe_fd, ast, shell, &saved_stdin, &pid1, &pid2);
 	close(pipe_fd[0]);
 	close(pipe_fd[1]);
-	waitpid(-1, &status, 0);
-	waitpid(-1, &status, 0);
+	/* Attendre les deux processus */
+	waitpid(pid1, NULL, 0);
+	waitpid(pid2, &status, 0);
+	/* Restaurer stdin */
 	dup2(saved_stdin, STDIN_FILENO);
 	close(saved_stdin);
+	/* Le code de sortie du pipe est celui de la dernière commande (pid2) */
 	if (WIFEXITED(status))
 		shell->exit_status = WEXITSTATUS(status);
 }

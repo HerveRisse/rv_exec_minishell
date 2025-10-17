@@ -23,7 +23,16 @@ size_t	count_token_words(t_token *tokens, t_token *stop)
 	count = 0;
 	while (tokens && tokens != stop)
 	{
-		if (tokens->type == WORD)
+		/* Ignorer les redirections et leurs fichiers */
+		if (tokens->type == REDIR_IN || tokens->type == REDIR_OUT
+			|| tokens->type == APPEND || tokens->type == HEREDOC)
+		{
+			tokens = tokens->next;
+			if (tokens && tokens != stop)
+				tokens = tokens->next;
+			continue;
+		}
+		if (tokens->type == WORD && tokens->value && tokens->value[0])
 			count++;
 		tokens = tokens->next;
 	}
@@ -42,7 +51,16 @@ char	**create_args(t_token *tokens, size_t nb_words)
 	i = 0;
 	while (i < nb_words && tokens)
 	{
-		if (tokens->type == WORD)
+		/* Ignorer les redirections et leurs fichiers */
+		if (tokens->type == REDIR_IN || tokens->type == REDIR_OUT
+			|| tokens->type == APPEND || tokens->type == HEREDOC)
+		{
+			tokens = tokens->next;
+			if (tokens)
+				tokens = tokens->next;
+			continue;
+		}
+		if (tokens->type == WORD && tokens->value && tokens->value[0])
 		{
 			words[i] = ft_strdup(tokens->value);
 			if (!words[i])

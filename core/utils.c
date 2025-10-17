@@ -2,11 +2,11 @@
 #include "../parser/parser.h"
 #include "../execution/execution.h"
 
-void	ft_itoa_buf(int n, char *buf)
+void ft_itoa_buf(int n, char *buf)
 {
-	int		i;
-	int		len;
-	long	nb;
+	int i;
+	int len;
+	long nb;
 
 	nb = n;
 	len = (nb <= 0);

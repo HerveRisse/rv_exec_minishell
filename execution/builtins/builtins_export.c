@@ -25,6 +25,15 @@ static int	export_var(t_shell *shell, char *arg)
 			return (1);
 		}
 	}
+	else
+	{
+		/* Pas de signe =, valider quand même le nom */
+		if (!is_valid_identifier(arg))
+		{
+			error_msg("not a valid identifier");
+			return (1);
+		}
+	}
 	return (0);
 }
 

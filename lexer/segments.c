@@ -2,7 +2,7 @@
 #include "lexer.h"
 #include <stdio.h>
 
-void	update_segments(t_segment **head, t_segment **tail, t_segment *new)
+void update_segments(t_segment **head, t_segment **tail, t_segment *new)
 {
 	if (!*head)
 	{
@@ -16,13 +16,13 @@ void	update_segments(t_segment **head, t_segment **tail, t_segment *new)
 	}
 }
 
-t_segment	*create_segments(char *word)
+t_segment *create_segments(char *word)
 {
-	t_segment	*head;
-	t_segment	*tail;
-	t_segment	*new;
-	char		*current;
-	size_t		len;
+	t_segment *head;
+	t_segment *tail;
+	t_segment *new;
+	char *current;
+	size_t len;
 
 	if (!word || !*word)
 		return (NULL);
@@ -46,27 +46,3 @@ t_segment	*create_segments(char *word)
 	}
 	return (head);
 }
-
-/*t_segment	*create_segments(char *word)
-{
-	t_segment	*new;
-	size_t		len;
-
-	len = get_len_segment_word(word);
-	if (!len)
-		return (NULL);
-	new = malloc(sizeof(t_segment));
-	if (!new)
-		return (NULL);
-	set_word_and_type_segment(new, word, len);
-	if (!new->word)
-	{
-		free(new);
-		return (NULL);
-	}
-	if (new->type == 0)
-		new->next = create_segments(word + len);
-	else
-		new->next = create_segments(word + len + 1);
-	return (new);
-}*/
