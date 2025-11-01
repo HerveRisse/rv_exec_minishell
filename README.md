@@ -1,88 +1,86 @@
-
-#include <unistd.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "../execution.h"
 #include "redirection.h"
 
-static t_ast_node *find_command_node(t_ast_node *ast)
+// fonction utilitaire pour écrire le contenu d'un fichier dans le pipe ou stdout
+static int write_file_into_fd(const char *filename, int fd)
 {
-    if (!ast)
-        return NULL;
-    if (ast->type == NODE_COMMAND)
-        return ast;
-    if (ast->type == NODE_REDIR_IN || ast->type == NODE_REDIR_OUT ||
-        ast->type == NODE_APPEND || ast->type == NODE_HEREDOC)
-        return find_command_node(ast->left);
-    if (ast->left)
-        return find_command_node(ast->left);
-    return NULL;
+    int file;
+    ssize_t n;
+    char buffer[4096];
+
+    file = open(filename, O_RDONLY);
+    if (file < 0)
+    {
+        perror(filename);
+        return -1;
+    }
+    while ((n = read(file, buffer, sizeof(buffer))) > 0)
+        write(fd, buffer, n);
+    close(file);
+    return 0;
 }
 
-// Écrit tout le contenu des fichiers d'entrée (<) dans le pipe
-static int fill_pipe_with_inputs(t_ast_node *ast, int write_fd)
+// Parcours récursif de l'AST pour traiter les redirections d'entrée <
+// Garde l'ordre gauche → droite
+static int process_input_redirs(t_ast_node *ast, int write_fd)
 {
-    char buffer[4096];
-    ssize_t n;
-    int fd;
-
     if (!ast)
         return 0;
 
-    // Parcours d'abord le left
-    fill_pipe_with_inputs(ast->left, write_fd);
+    // traite d'abord le left
+    if (process_input_redirs(ast->left, write_fd) < 0)
+        return -1;
 
-    // Puis traite ce nœud si c'est une redirection d'entrée
+    // puis ce nœud si c'est une redirection d'entrée
     if (ast->type == NODE_REDIR_IN)
     {
-        fd = open(ast->filename, O_RDONLY);
-        if (fd < 0)
-        {
-            perror(ast->filename);
+        if (write_file_into_fd(ast->filename, write_fd) < 0)
             return -1;
-        }
-        while ((n = read(fd, buffer, sizeof(buffer))) > 0)
-            write(write_fd, buffer, n);
-        close(fd);
     }
 
-    // Ensuite parcours right si nécessaire
-    fill_pipe_with_inputs(ast->right, write_fd);
-
-    return 0;
+    // puis le right si besoin
+    return process_input_redirs(ast->right, write_fd);
 }
 
 void execute_redirection(t_ast_node *ast, t_shell *shell)
 {
     int stdin_copy = dup(STDIN_FILENO);
     int stdout_copy = dup(STDOUT_FILENO);
-    t_ast_node *cmd_node = find_command_node(ast);
-    int pipefd[2];
+    int fd_out;
+    t_ast_node *cmd_node;
 
-    if (pipe(pipefd) == -1)
-    {
-        perror("pipe");
+    if (!ast)
         return;
+
+    // Traite les redirections de sortie > et >> sur ce niveau
+    if (ast->type == NODE_REDIR_OUT)        // >
+        fd_out = open(ast->filename, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    else if (ast->type == NODE_APPEND)      // >>
+        fd_out = open(ast->filename, O_CREAT | O_WRONLY | O_APPEND, 0644);
+    else
+        fd_out = -1;
+
+    if (fd_out >= 0)
+    {
+        dup2(fd_out, STDOUT_FILENO);
+        close(fd_out);
     }
 
-    // Remplit le pipe avec tous les fichiers d'entrée
-    if (fill_pipe_with_inputs(ast, pipefd[1]) != 0)
-    {
-        close(pipefd[0]);
-        close(pipefd[1]);
-        return;
-    }
-    close(pipefd[1]); // Fermeture côté écriture
+    // Parcours et traite toutes les redirections d'entrée <
+    process_input_redirs(ast, STDIN_FILENO);
 
-    // Redirige STDIN vers le read-end du pipe
-    dup2(pipefd[0], STDIN_FILENO);
-    close(pipefd[0]);
-
+    // Trouve le nœud de commande et exécute
+    cmd_node = ast;
+    while (cmd_node && cmd_node->type != NODE_COMMAND)
+        cmd_node = cmd_node->left; // descend à gauche
     if (cmd_node)
         execute_ast(cmd_node, shell);
 
-    // Restaurer STDIN et STDOUT
+    // Restaure STDIN/STDOUT
     dup2(stdin_copy, STDIN_FILENO);
     dup2(stdout_copy, STDOUT_FILENO);
     close(stdin_copy);
